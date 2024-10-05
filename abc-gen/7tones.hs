@@ -1,96 +1,112 @@
 import Data.List
 
+-- 12TET A = 440Hz
+data Note = Pitchy
+    | Note {
+        letter :: Letter,
+        modifier:: Modifier }
+    deriving (Eq, Ord)
+
+instance Show Note where
+    show Pitchy = "X" -- Brown = "\xF0\x9F\x92\xA9"
+    show (Note l m) = show m ++ show l
+
 data Letter = F | G | A | B | C | D | E
     deriving (Eq, Ord)
 data Modifier = Flat | Natural | Sharp
     deriving (Eq, Ord)
 
--- parseScale' DiffList CompletedNote::Letter CN::Mod LastNote::Mod
--- Sharp for CN::Mod indicates a note was not added, otherwise it would be Flat or Natural
--- LN::Mod remembers whether a Flat or Sharp was added and reverts to Natural when a note is not added
-parseScale ns = parseScale' ('F':) F Natural Natural
-    where
-        parseScale' dl F Flat _ = dl "f |\\\n"
-        parseScale' dl F Natural from
-            | elem 'H' ns && elem 'G' ns = parseScale' (dl . ('^':) . ('F':)) G Flat Sharp
-            | elem 'H' ns = parseScale' (dl . ('_':) . ('G':)) G Flat Flat
-            | otherwise = parseScale' dl F Sharp Natural
-        parseScale' dl F Sharp from
-            | elem 'G' ns = parseScale' (dl . ('G':)) G Natural Natural
-            | elem 'I' ns = parseScale' (dl . ('^':) . ('G':)) A Flat Sharp
-            | otherwise = parseScale' dl G Sharp Natural
-        parseScale' dl G Flat from
-            | elem 'G' ns = let preproc = if from == Flat then ('=':) else id in
-                parseScale' (dl . preproc . ('G':)) G Natural Natural
-            | elem 'I' ns && elem 'A' ns = parseScale' (dl . ('^':) . ('G':)) A Flat Sharp
-            | elem 'I' ns = parseScale' (dl . ('_':) . ('A':)) A Flat Flat
-            | otherwise = parseScale' dl G Sharp Natural
-        parseScale' dl G Natural from
-            | elem 'I' ns && elem 'A' ns = parseScale' (dl . ('^':) . ('G':)) A Flat Sharp
-            | elem 'I' ns = parseScale' (dl . ('_':) . ('A':)) A Flat Flat
-            | otherwise = parseScale' dl G Sharp Natural
-        parseScale' dl G Sharp from
-            | elem 'A' ns = parseScale' (dl . ('A':)) A Natural Natural
-            | elem 'J' ns = parseScale' (dl . ('^':) . ('A':)) B Flat Sharp
-            | otherwise = parseScale' dl A Sharp Natural
-        parseScale' dl A Flat from
-            | elem 'A' ns = let preproc = if from == Flat then ('=':) else id in
-                parseScale' (dl . preproc . ('A':)) A Natural Natural
-            | elem 'J' ns && elem 'B' ns && elem 'C' ns = parseScale' (dl . ('^':) . ('A':)) B Flat Sharp
-            | elem 'J' ns = parseScale' (dl . ('_':) . ('B':)) B Flat Flat
-            | otherwise = parseScale' dl A Sharp Natural
-        parseScale' dl A Natural from
-            | elem 'J' ns && elem 'B' ns = parseScale' (dl . ('^':) . ('A':)) B Flat Sharp
-            | elem 'J' ns = parseScale' (dl . ('_':) . ('B':)) B Flat Flat
-            | otherwise = parseScale' dl A Sharp Natural
-        parseScale' dl A Sharp from
-            | elem 'B' ns = parseScale' (dl . ('B':)) B Natural Natural
-            | otherwise = parseScale' dl B Sharp Natural
-        parseScale' dl B Flat from
-            | elem 'B' ns && notElem 'C' ns = parseScale' (dl . ('_':) . ('c':)) C Flat Flat
-            | elem 'B' ns = let preproc = if from == Flat then ('=':) else id in
-                parseScale' (dl . preproc . ('B':)) B Natural Natural
-            | otherwise = parseScale' dl B Sharp Natural
-        parseScale' dl B Natural from = parseScale' dl C Flat Natural
-        parseScale' dl B Sharp from
-            | elem 'C' ns = parseScale' (dl . ('c':)) C Natural Natural
-            | elem 'K' ns = parseScale' (dl . ('^':) . ('c':)) D Flat Sharp
-            | otherwise = parseScale' dl C Sharp Natural
-        parseScale' dl C Flat from
-            | elem 'C' ns = let preproc = if from == Flat then ('=':) else id in
-                parseScale' (dl . preproc . ('c':)) C Natural Natural
-            | elem 'K' ns && elem 'D' ns = parseScale' (dl . ('^':) . ('c':)) D Flat Sharp
-            | elem 'K' ns = parseScale' (dl . ('_':) . ('d':)) D Flat Flat
-            | otherwise = parseScale' dl C Sharp Natural
-        parseScale' dl C Natural from
-            | elem 'K' ns && elem 'D' ns = parseScale' (dl . ('^':) . ('c':)) D Flat Sharp
-            | elem 'K' ns = parseScale' (dl . ('_':) . ('d':)) D Flat Flat
-            | otherwise = parseScale' dl C Sharp Natural
-        parseScale' dl C Sharp from
-            | elem 'D' ns = parseScale' (dl . ('d':)) D Natural Natural
-            | elem 'L' ns = parseScale' (dl . ('^':) . ('d':)) E Flat Sharp
-            | otherwise = parseScale' dl D Sharp Natural
-        parseScale' dl D Flat from
-            | elem 'D' ns = let preproc = if from == Flat then ('=':) else id in
-                parseScale' (dl . preproc . ('d':)) D Natural Natural
-            | elem 'L' ns && elem 'E' ns = parseScale' (dl . ('^':) . ('d':)) E Flat Sharp
-            | elem 'L' ns = parseScale' (dl . ('_':) . ('e':)) E Flat Flat
-            | otherwise = parseScale' dl D Sharp Natural
-        parseScale' dl D Natural from
-            | elem 'L' ns && elem 'E' ns = parseScale' (dl . ('^':) . ('d':)) E Flat Sharp
-            | elem 'L' ns = parseScale' (dl . ('_':) . ('e':)) E Flat Flat
-            | otherwise = parseScale' dl D Sharp Natural
-        parseScale' dl D Sharp from
-            | elem 'E' ns = parseScale' (dl . ('e':)) E Natural Natural
-            | otherwise = parseScale' dl E Sharp Natural
-        parseScale' dl E Flat from
-            | elem 'E' ns = let preproc = if from == Flat then ('=':) else id in
-                parseScale' (dl . preproc . ('e':)) F Flat Natural
-            | otherwise = parseScale' dl E Sharp Natural
-        parseScale' dl E Natural from = parseScale' dl F Flat Natural
-        parseScale' dl E Sharp _ = parseScale' dl F Flat Natural
+instance Show Letter where
+    show F = "F"
+    show G = "G"
+    show A = "A"
+    show B = "B"
+    show C = "C"
+    show D = "D"
+    show E = "E"
 
-scales = map parseScale
+instance Show Modifier where
+    show Flat = "b"
+    show Natural = []
+    show Sharp = "#"
+
+instance Enum Letter where
+    toEnum 0 = F
+    toEnum 1 = G
+    toEnum 2 = A
+    toEnum 3 = B
+    toEnum 4 = C
+    toEnum 5 = D
+    toEnum 6 = E
+    toEnum i = toEnum (mod i 7)
+    fromEnum F = 0
+    fromEnum G = 1
+    fromEnum A = 2
+    fromEnum B = 3
+    fromEnum C = 4
+    fromEnum D = 5
+    fromEnum E = 6
+
+parseScale2 ns = parseScale' ('F':) 1 False (Note F Natural)
+    where
+        abcL F = 'F'
+        abcL G = 'G'
+        abcL A = 'A'
+        abcL B = 'B'
+        abcL C = 'c'
+        abcL D = 'd'
+        abcL E = 'e'
+
+        charL F = 'F'
+        charL G = 'G'
+        charL A = 'A'
+        charL B = 'B'
+        charL C = 'C'
+        charL D = 'D'
+        charL E = 'E'
+
+        nextChar F = 'H'
+        nextChar G = 'I'
+        nextChar A = 'J'
+        nextChar B = 'C'
+        nextChar C = 'K'
+        nextChar D = 'L'
+        nextChar E = 'F'
+
+        elemNs = flip elem ns
+        notElemNs = flip notElem ns
+
+        parseScale' :: (String -> String) -> Int -> Bool -> Note -> String
+        parseScale' dl 7 _ _ = dl "f |\\\n"
+        parseScale' dl n _ (Note l Natural)
+            | nextChar l == (charL . succ) l =
+                parseScale' dl n False (Note (succ l) Flat)
+            | elemNs (nextChar l) && elemNs (charL . succ $ l) =
+                parseScale' (dl . ('^':) . (abcL l:)) (n + 1) False (Note (succ l) Flat)
+            | elemNs (nextChar l) =
+                parseScale' (dl . ('_':) . ((abcL . succ) l:)) (n + 1) True (Note (succ l) Flat)
+            | otherwise = parseScale' dl n False (Note l Sharp)
+        parseScale' dl n _ (Note l Sharp)
+            | elemNs (charL . succ $ l) =
+                parseScale' (dl . ((abcL . succ) l:)) (n + 1) False (Note (succ l) Natural)
+            | (nextChar . succ) l /= (charL . succ . succ) l && elemNs (nextChar . succ $ l) =
+                parseScale' (dl . ('^':) . ((abcL . succ) l:)) (n + 1) False (Note (succ . succ $ l) Flat)
+            | otherwise = parseScale' dl n False (Note (succ l) Sharp)
+        parseScale' dl n fromFlat (Note l Flat)
+            | nextChar l == (charL . succ) l && elemNs (charL l) && notElemNs (nextChar l) =
+                -- we know there is no `succ l` in `ns`
+                parseScale' (dl . ('_':) . ((abcL . succ) l:)) (n + 1) False (Note (succ l) Natural)
+            | elemNs (charL l) = let prefix = if fromFlat then ('=':) else id in
+                parseScale' (dl . prefix . (abcL l:)) (n + 1) False (Note l Natural)
+            | nextChar l /= (charL . succ) l && elemNs (nextChar l) && elemNs (charL . succ $ l)
+                && ((nextChar . succ) l /= (charL . succ . succ) l || elemNs (charL . succ . succ $ l)) =
+                parseScale' (dl . ('^':) . (abcL l:)) (n + 1) False (Note (succ l) Flat)
+            | nextChar l /= (charL . succ) l && elemNs (nextChar l) =
+                parseScale' (dl . ('_':) . ((abcL . succ) l:)) (n + 1) True (Note (succ l) Flat)
+            | otherwise = parseScale' dl n False (Note l Sharp)
+
+scales f = map f
     . filter (\s -> length s == 7 && 'F' `elem` s)
     . subsequences
     $ "FCGDAEBHKILJ"
+
